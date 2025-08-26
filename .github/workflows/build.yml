@@ -75,11 +75,14 @@ jobs:
       with:
         path: dist
 
+    - name: Listar archivos para depuración
+      run: ls -R dist/
+      
     - name: Subir ejecutables a la release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ github.ref }}
-        name: Release ${{ github.ref }} # El nombre visible de la release
-        files: dist/**/main/*
+        name: Release ${{ github.ref }}
+        files: dist/**/main
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
