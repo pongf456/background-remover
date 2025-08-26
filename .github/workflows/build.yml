@@ -1,11 +1,10 @@
-name: Build PyInstaller Executable
+name: Build
 
 on:
   push:
-    branches:
-      - main
-      - master
-      
+    tags:
+      - 'v*'
+
 permissions:
   contents: write
 
@@ -44,7 +43,7 @@ jobs:
       env:
         PIP_RETRIES: 5
         PIP_TIMEOUT: 120
-        
+      
     - name: Set PyInstaller data separator on Windows
       if: runner.os == 'Windows'
       shell: powershell
@@ -62,7 +61,7 @@ jobs:
     - name: Upload executable as artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.job }}-${{ matrix.os }}
+        name: build-${{ matrix.os }}
         path: dist/main
 
   release:
@@ -71,25 +70,16 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Descargar artefactos
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
+    - name: Descargar artefactos
+      uses: actions/download-artifact@v4
+      with:
+        path: dist
 
-      - name: Crear Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ github.run_number }}
-          release_name: Release v${{ github.run_number }}
-          draft: false
-          prerelease: false
-
-      - name: Subir ejecutables a la release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: dist/**/main/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Subir ejecutables a la release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref }}
+        name: Release ${{ github.ref }} # El nombre visible de la release
+        files: dist/**/main/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
