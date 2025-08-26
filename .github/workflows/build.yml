@@ -83,6 +83,8 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         name: Release ${{ github.ref }}
-        files: dist/**/main
+        files: |
+          dist/build-ubuntu-latest
+          dist/build-windows-latest
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
