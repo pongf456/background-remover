@@ -1,0 +1,63 @@
+name: Build PyInstaller Executable
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install libmagic on Ubuntu
+      if: runner.os == 'Linux'
+      run: sudo apt-get update && sudo apt-get install -y libmagic1
+
+    - name: Install platform-specific dependencies
+      if: runner.os == 'Windows'
+      run: |
+        python -m pip install --upgrade pip
+        pip install python-magic-bin
+      
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+      env:
+        PIP_RETRIES: 5
+        PIP_TIMEOUT: 120
+        
+    - name: Set PyInstaller data separator on Windows
+      if: runner.os == 'Windows'
+      shell: powershell
+      run: |
+        $separator = ";"
+        "PYI_SEP=$separator" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+    
+    - name: Set PyInstaller data separator on Linux/macOS
+      if: runner.os != 'Windows'
+      run: echo "PYI_SEP=:" >> $GITHUB_ENV
+
+    - name: Build executable with PyInstaller
+      run: pyinstaller --onedir --icon=resources/icon.ico --add-data "src/assets${{ env.PYI_SEP }}assets" src/main.py
+
+    - name: Upload executable as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ github.job }}-${{ matrix.os }}
+        path: dist/main
