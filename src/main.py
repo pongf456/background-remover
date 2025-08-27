@@ -1,15 +1,16 @@
 import typer
 import sys
 import os
+from typing import TYPE_CHECKING
 from typing import Optional
 from domain.schemas import InvalidImage, ImageProcessingError
 from domain.image_service import ImageService
+import importlib
 from application.image_parser import ImageParserAdapter
-from application.image_processor import ImageProcessorAdapter
-from application.image_processor_opencv import ImageProcessorOpenCV
 
-cv_service = ImageService(ImageParserAdapter(), ImageProcessorOpenCV())
-ml_service = ImageService(ImageParserAdapter(), ImageProcessorAdapter())
+if TYPE_CHECKING:
+    from application.image_processor import ImageProcessorAdapter
+    from application.image_processor_opencv import ImageProcessorOpenCV
 
 
 def process(
@@ -27,10 +28,18 @@ def process(
 ):
     service: ImageService
     if operator == 1:
-        service = cv_service
-    else:
-        service = ml_service
+        processor_module = importlib.import_module(
+            "application.image_processor_opencv"
+        ).ImageProcessorOpenCV
+        processor_cv: ImageProcessorOpenCV = processor_module()
+        service = ImageService(ImageParserAdapter(), processor_cv)
 
+    else:
+        processor_module = importlib.import_module(
+            "application.image_processor"
+        ).ImageProcessorAdapter
+        processor_ml: ImageProcessorAdapter = processor_module()
+        service = ImageService(ImageParserAdapter(), processor_ml)
     try:
         if data:
             result = service.remove_background(data)
