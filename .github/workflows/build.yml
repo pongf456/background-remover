@@ -78,13 +78,18 @@ jobs:
     - name: Listar archivos para depuración
       run: ls -R dist/
       
+    - name: Comprimir carpetas de build
+      run: |
+        zip -r dist/ubuntu_build.zip dist/build-ubuntu-latest
+        zip -r dist/windows_build.zip dist/build-windows-latest
+
     - name: Subir ejecutables a la release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ github.ref }}
         name: Release ${{ github.ref }}
         files: |
-          dist/build-ubuntu-latest
-          dist/build-windows-latest
+          dist/ubuntu_build.zip
+          dist/windows_build.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
